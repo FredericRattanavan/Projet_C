@@ -10,6 +10,7 @@ int afficherFichierSource(void);
 int ecrireFichierPerroquet(void);
 int afficherFichierPerroquet(void);
 int fonctionChiffrageASCII(void);
+int fonctionDechiffrageASCII(void);
 int afficherFichierResultat(void);
 
 
@@ -63,14 +64,19 @@ int main()
                 break;
 
 
-            // Commande pour chiffrer le contenu de fichier source via perroquet par ASCII (WIP)
+            // Commande pour chiffrer le contenu de fichier source via perroquet par ASCII
             case 5 :
                 fonctionChiffrageASCII();
                 break;
 
 
-            // Commande pour afficher le résultat de dest.crt
+            // Commande pour déchiffrer le contenu de fichier dest.crt via perroquet par ASCII
             case 6 :
+                fonctionDechiffrageASCII();
+                break;
+
+            // Commande pour afficher le résultat de dest.crt
+            case 7 :
                 afficherFichierResultat();
                 break;
 
@@ -108,7 +114,8 @@ void afficherMenuCommandeChiffrageASCII()
     printf("3. Modifier le perroquet contenu dans peroq.def\n");
     printf("4. Afficher le perroquet contenu dans peroq.def\n");
     printf("5. Chiffrer le contenu du source.txt par peroq.def par difference ASCII\n");
-    printf("6. Afficher le resultat contenu dans dest.crt\n");
+    printf("6. Dechiffrer le contenu du dest.crt par peroq.def par difference ASCII\n");
+    printf("7. Afficher le resultat contenu dans dest.crt\n");
 
     printf("\n");
 }
@@ -228,7 +235,7 @@ int afficherFichierResultat()
     // Déclaration et initialisation du pointeur sur le FILE
     FILE *fp = NULL;
 
-    fp = fopen("dest.crt", "r+");
+    fp = fopen("dest.crt", "r");
     if (fp == NULL)
     {
         printf("Erreur Open ");
@@ -236,7 +243,7 @@ int afficherFichierResultat()
     }
 
     // Variable de stockage du file resultat dest.crt pour ensuite l'afficher
-    char buffer[255];
+    char buffer[255] = "\0";
     printf("Le message dans dest.crt est : ");
     while(fgets(buffer, 255, fp) != NULL)
     {
@@ -249,12 +256,11 @@ int afficherFichierResultat()
 
 
 
-// Fonction de chiffrage du contenu de source via perroquet par ASCII (WIP)
+// Fonction de chiffrage du contenu de source via perroquet par ASCII
 int fonctionChiffrageASCII()
 {
     // Déclaration et initialisation du pointeur source sur le FILE
-    FILE *f_source = NULL;
-    f_source = fopen("source.txt", "r+");
+    FILE *f_source = fopen("source.txt", "r");
     if (f_source == NULL)
     {
         printf("Erreur Open Source");
@@ -262,49 +268,155 @@ int fonctionChiffrageASCII()
     }
 
     // Déclaration et initialisation du pointeur perroquet sur le FILE
-    FILE *f_peroquet = NULL;
-    f_peroquet = fopen("peroq.def", "r+");
+    FILE *f_peroquet = fopen("peroq.def", "r");
     if (f_peroquet == NULL)
     {
         printf("Erreur Open Perroquet");
         return 0;
     }
 
-    char stockage_source[255];
+
+    // Initialisation d'une variable de stockage pour le contenu de fichier source
+    char stockage_source[255] = "\0";
     fgets(stockage_source, 255, f_source);
 
-
-
-
-
-
-    char stockage_perroquet[255];
+    // Initialisation d'une variable de stockage pour le contenu de fichier perroquet
+    char stockage_perroquet[255] = "\0";
     fgets(stockage_perroquet, 255, f_peroquet);
-
-    printf(" debugg ");
-
-
-
-    while(fgets(stockage_source, 255, f_source) != NULL)
-    {
-        printf("%s", stockage_source);
-    }
-
-    while(fgets(stockage_perroquet, 255, f_peroquet) != NULL)
-    {
-        printf("%s", stockage_perroquet);
-    }
-
-
-
-    printf(" apres debugg ");
 
     // Arret des pointeurs sur FILE
     fclose(f_source);
     fclose(f_peroquet);
+
+
+    // Déclaration et initialisation du pointeur resultat sur le FILE
+    FILE *f_resultat = fopen("dest.crt", "w");
+    if (f_resultat == NULL)
+    {
+        printf("Erreur Open Perroquet");
+        return 0;
+    }
+    // Création d'une variable de stockage pour le contenu de fichier perroquet
+    char stockage_resultat[255] = "\0";
+
+    // Variable de longueur de source et perroquet
+    int longueur_source = strlen(stockage_source);
+    int longueur_perroquet = strlen(stockage_perroquet);
+
+    // Si la longueur de source est inférieur à la longueur de perroquet
+    if (longueur_source <= longueur_perroquet)
+    {
+        // Déroulement de l'algorithme normalement avec l'écriture dans stockage résultat
+        for (int i = 0; i < longueur_source; i++)
+        {
+            stockage_resultat[i] = stockage_source[i] - stockage_perroquet[i];
+        }
+    }
+    else // ( longueur source est > longueur perroquet )
+    {
+
+        for (int j = 0; j < longueur_source; j++)
+        {
+            stockage_resultat[j] = stockage_source[j] - stockage_perroquet[j %longueur_perroquet];
+        }
+
+
+    }
+
+
+
+    // Ecriture dans dest.crt
+    fwrite(&stockage_resultat, sizeof(char), strlen(stockage_resultat), f_resultat);
+    printf("Votre message chiffre a ete ecrit dans dest.crt.\n");
+
+    // Fermeture du pointeur
+    fclose(f_resultat);
+    return 0;
+
 }
 
 
+// Fonction de déchiffrage du contenu de source via perroquet par ASCII (WIP)
+int fonctionDechiffrageASCII()
+{
 
+    // Déclaration et initialisation du pointeur perroquet sur le FILE
+    FILE *f_peroquet = fopen("peroq.def", "r");
+    if (f_peroquet == NULL)
+    {
+        printf("Erreur Open Perroquet");
+        return 0;
+    }
+
+    // Déclaration et initialisation du pointeur resultat sur le FILE
+    FILE *f_resultat = fopen("dest.crt", "w");
+    if (f_resultat == NULL)
+    {
+        printf("Erreur Open Perroquet");
+        return 0;
+    }
+
+
+    // Initialisation d'une variable de stockage pour le contenu de fichier resultat
+    char stockage_resultat[255] = "\0";
+    fgets(stockage_resultat, 255, f_resultat);
+
+    // Initialisation d'une variable de stockage pour le contenu de fichier perroquet
+    char stockage_perroquet[255] = "\0";
+    fgets(stockage_perroquet, 255, f_peroquet);
+
+    // Arret des pointeurs sur FILE
+    fclose(f_resultat);
+    fclose(f_peroquet);
+
+
+    // Déclaration et initialisation du pointeur dechiffrage sur le FILE
+    FILE *f_dechiffrage = fopen("resultat_dechiffrage.txt", "r");
+    if (f_dechiffrage == NULL)
+    {
+        printf("Erreur Open Source");
+        return 0;
+    }
+
+    // Création d'une variable de stockage pour le contenu de fichier dechiffrage
+    char stockage_dechiffrage[255] = "\0";
+
+
+    // Variable de longueur de resultat et perroquet
+    int longueur_resultat = strlen(stockage_resultat);
+    int longueur_perroquet = strlen(stockage_perroquet);
+
+
+    // Si la longueur de résultat est inférieur à la longueur de perroquet
+    if (longueur_resultat < longueur_perroquet)
+    {
+        // Déroulement de l'algorithme normalement avec l'écriture dans stockage dechiffrage
+        for (int i = 0; i < longueur_resultat; i++)
+        {
+            stockage_dechiffrage[i] = stockage_resultat[i] + stockage_perroquet[i];
+        }
+
+    }
+    else // ( longueur resultat est > longueur perroquet )
+    {
+
+        for (int j = 0; j < longueur_resultat; j++)
+        {
+            stockage_dechiffrage[j] = stockage_resultat[j] + stockage_perroquet[j% longueur_perroquet];
+        }
+
+
+    }
+
+    // Ecriture dans resultat_dechiffrage.txt
+    fwrite(&stockage_dechiffrage, sizeof(char), strlen(stockage_dechiffrage), f_dechiffrage);
+    printf("Votre message dechiffre a ete ecrit dans resultat_dechiffrage.\n");
+
+    // Fermeture du pointeur
+    fclose(f_dechiffrage);
+
+    return 0;
+
+}
 
 
